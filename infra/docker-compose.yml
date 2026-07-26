@@ -1,0 +1,166 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aivirtuallab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  # ─── RabbitMQ ────────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ─── Frontend ────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infra/docker/Dockerfile.frontend
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+    depends_on:
+      - backend
+
+  # ─── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infra/docker/Dockerfile.backend
+    ports:
+      - '4000:4000'
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/aivirtuallab
+      JWT_SECRET: super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: super-secret-refresh-key-change-in-production
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JUDGE0_URL: http://judge0-server:2358
+      HINT_SERVICE_URL: http://hint-service:8001
+      ERROR_EXPLANATION_SERVICE_URL: http://error-explanation-service:8002
+      VIVA_SERVICE_URL: http://viva-service:8003
+      RECOMMENDATION_SERVICE_URL: http://recommendation-service:8004
+      KNOWLEDGE_TRACING_SERVICE_URL: http://knowledge-tracing-service:8005
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+  # ─── AI Services ─────────────────────────────────────────────────────────────
+  hint-service:
+    build:
+      context: ./ai-services/hint-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8001:8001'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+
+  error-explanation-service:
+    build:
+      context: ./ai-services/error-explanation-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8002:8002'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8002
+
+  viva-service:
+    build:
+      context: ./ai-services/viva-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8003:8003'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8003
+
+  recommendation-service:
+    build:
+      context: ./ai-services/recommendation-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8004:8004'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8004
+
+  knowledge-tracing-service:
+    build:
+      context: ./ai-services/knowledge-tracing-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8005:8005'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8005
+
+  analytics-service:
+    build:
+      context: ./ai-services/analytics-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8006:8006'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8006
+
+  prediction-service:
+    build:
+      context: ./ai-services/prediction-service
+      dockerfile: ../../infra/docker/Dockerfile.ai-service
+    ports:
+      - '8007:8007'
+    env_file:
+      - .env
+    command: uvicorn main:app --host 0.0.0.0 --port 8007
+
+  # ─── Nginx ───────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

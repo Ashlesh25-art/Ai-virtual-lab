@@ -1,0 +1,47 @@
+version: '3.9'
+
+# Judge0 self-hosted deployment
+# See: https://github.com/judge0/judge0/blob/master/CHANGELOG.md
+
+services:
+  judge0-server:
+    image: judge0/judge0:1.13.1
+    ports:
+      - '2358:2358'
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    privileged: true
+    restart: always
+    depends_on:
+      - judge0-db
+      - judge0-redis
+
+  judge0-workers:
+    image: judge0/judge0:1.13.1
+    command: ['./scripts/workers']
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    privileged: true
+    restart: always
+    depends_on:
+      - judge0-db
+      - judge0-redis
+
+  judge0-db:
+    image: postgres:13.0
+    env_file:
+      - judge0.conf
+    volumes:
+      - judge0_postgres_data:/var/lib/postgresql/data/
+    restart: always
+
+  judge0-redis:
+    image: redis:6.0
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - judge0_redis_data:/data
+    restart: always
+
+volumes:
+  judge0_postgres_data:
+  judge0_redis_data:

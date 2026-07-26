@@ -1,0 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SubmissionStatus {
+  PENDING
+  RUNNING
+  ACCEPTED
+  WRONG_ANSWER
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+  COMPILATION_ERROR
+}
+
+enum ContentType {
+  VIDEO
+  PDF
+  DATASET
+  QUIZ
+}
+
+// ─── User Management ──────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  role          Role
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  studentProfile    StudentProfile?
+  instructorProfile InstructorProfile?
+
+  submissions   Submission[]
+  notifications Notification[]
+  certificates  Certificate[]
+
+  @@map("users")
+}
+
+model StudentProfile {
+  id           String @id @default(cuid())
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id])
+  rollNumber   String @unique
+  sectionId    String
+  section      Section @relation(fields: [sectionId], references: [id])
+
+  @@map("student_profiles")
+}
+
+model InstructorProfile {
+  id           String @id @default(cuid())
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id])
+  employeeId   String @unique
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  @@map("instructor_profiles")
+}
+
+// ─── Academic Structure ───────────────────────────────────────────────────────
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  batches   Batch[]
+
+  @@map("academic_years")
+}
+
+model Department {
+  id                 String              @id @default(cuid())
+  name               String              @unique
+  code               String              @unique
+  instructorProfiles InstructorProfile[]
+  subjects           Subject[]
+
+  @@map("departments")
+}
+
+model Batch {
+  id             String       @id @default(cuid())
+  name           String
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  sections       Section[]
+
+  @@map("batches")
+}
+
+model Section {
+  id              String           @id @default(cuid())
+  name            String
+  batchId         String
+  batch           Batch            @relation(fields: [batchId], references: [id])
+  studentProfiles StudentProfile[]
+  sessions        Session[]
+
+  @@map("sections")
+}
+
+model Subject {
+  id           String       @id @default(cuid())
+  name         String
+  code         String       @unique
+  departmentId String
+  department   Department   @relation(fields: [departmentId], references: [id])
+  experiments  Experiment[]
+
+  @@map("subjects")
+}
+
+// ─── Experiments ──────────────────────────────────────────────────────────────
+
+model Experiment {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  createdById String
+  tasks       Task[]
+  content     Content[]
+  sessions    Session[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("experiments")
+}
+
+model Task {
+  id           String      @id @default(cuid())
+  experimentId String
+  experiment   Experiment  @relation(fields: [experimentId], references: [id])
+  title        String
+  description  String
+  starterCode  String?
+  order        Int
+  testCases    TestCase[]
+
+  @@map("tasks")
+}
+
+model TestCase {
+  id             String  @id @default(cuid())
+  taskId         String
+  task           Task    @relation(fields: [taskId], references: [id])
+  input          String
+  expectedOutput String
+  isHidden       Boolean @default(false)
+
+  @@map("test_cases")
+}
+
+// ─── Content ──────────────────────────────────────────────────────────────────
+
+model Content {
+  id           String      @id @default(cuid())
+  experimentId String
+  experiment   Experiment  @relation(fields: [experimentId], references: [id])
+  type         ContentType
+  title        String
+  url          String
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  @@map("content")
+}
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
+
+model Session {
+  id           String        @id @default(cuid())
+  experimentId String
+  experiment   Experiment    @relation(fields: [experimentId], references: [id])
+  sectionId    String
+  section      Section       @relation(fields: [sectionId], references: [id])
+  scheduledAt  DateTime
+  startedAt    DateTime?
+  endedAt      DateTime?
+  status       SessionStatus @default(SCHEDULED)
+  submissions  Submission[]
+  attendance   Attendance[]
+  createdAt    DateTime      @default(now())
+
+  @@map("sessions")
+}
+
+// ─── Submissions ──────────────────────────────────────────────────────────────
+
+model Submission {
+  id          String           @id @default(cuid())
+  sessionId   String
+  session     Session          @relation(fields: [sessionId], references: [id])
+  studentId   String
+  student     User             @relation(fields: [studentId], references: [id])
+  taskId      String
+  code        String
+  language    String
+  status      SubmissionStatus @default(PENDING)
+  score       Float?
+  feedback    String?
+  judge0Token String?
+  submittedAt DateTime         @default(now())
+  gradedAt    DateTime?
+
+  @@map("submissions")
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+model Attendance {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  studentId String
+  joinedAt  DateTime @default(now())
+
+  @@unique([sessionId, studentId])
+  @@map("attendance")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ─── Certificates ─────────────────────────────────────────────────────────────
+
+model Certificate {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id])
+  experimentId String
+  pdfUrl       String
+  issuedAt     DateTime @default(now())
+
+  @@unique([studentId, experimentId])
+  @@map("certificates")
+}
