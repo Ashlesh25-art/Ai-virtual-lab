@@ -36,7 +36,7 @@
   border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 28px;
   box-shadow: 0 30px 90px -25px rgba(30, 30, 40, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── Visual Pane ─────────────────────────────────────────────────────────── */
@@ -51,6 +51,7 @@
   justify-content: center;
   align-items: center;
   padding: 40px;
+  border-radius: 28px 0 0 28px;
 }
 
 .dotGrid {
@@ -219,9 +220,9 @@
 
 .brandRow    { display: flex; align-items: center; gap: 10px; margin-bottom: 44px; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .02s both; }
 .formHead    { animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .08s both; }
-.fieldRole   { animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .14s both; }
-.fieldEmail  { animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .20s both; }
-.fieldPw     { animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .26s both; }
+.fieldRole   { position: relative; z-index: 30; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .14s both; }
+.fieldEmail  { position: relative; z-index: 20; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .20s both; }
+.fieldPw     { position: relative; z-index: 10; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .26s both; }
 .formActions { margin-top: 6px; margin-bottom: 20px; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .32s both; }
 .formFoot    { font-size: 13.5px; color: #615a72; text-align: center; margin: 0; animation: fadeUp .55s cubic-bezier(.2,.7,.2,1) .38s both; }
 .formFoot a  { color: #8b5cf6; font-weight: 700; text-decoration: none; cursor: pointer; }
@@ -245,37 +246,59 @@
 /* ── Role Dropdown ───────────────────────────────────────────────────────── */
 .selectTrigger {
   display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 9px 12px;
+  width: 100%; min-height: 58px; padding: 11px 14px;
   border: 1.5px solid #e7e3ef;
   border-radius: 12px; background: #fff; cursor: pointer;
   transition: border-color .18s, box-shadow .18s;
   user-select: none;
+  appearance: none;
+  text-align: left;
 }
 .selectTrigger:hover { border-color: #d7d1e4; }
+.selectTrigger:focus-visible,
 .selectTriggerOpen   { border-color: #8b5cf6; box-shadow: 0 0 0 4px rgba(139,92,246,.13); }
 .selectTriggerOpen .chevron { transform: rotate(180deg); }
 
-.selectRoleIcon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; transition: background .2s; }
+.selectRoleIcon { width: 36px; height: 36px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; transition: background .2s; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
 .roleStudent { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
 .roleTeacher { background: linear-gradient(135deg,#f472b6,#d6409f); }
 .roleAdmin   { background: linear-gradient(135deg,#fb923c,#f2994a); }
 
-.triggerLabel { font-size: 14.5px; font-weight: 700; color: #201b2e; }
-.chevron { margin-left: auto; color: #9891a6; transition: transform .2s; display: flex; }
+.triggerLabel { font-size: 15px; font-weight: 700; color: #201b2e; line-height: 1.2; }
+.chevron { margin-left: auto; color: #7f768f; transition: transform .2s, color .18s; display: flex; }
+.selectTrigger:hover .chevron,
+.selectTrigger:focus-visible .chevron,
+.selectTriggerOpen .chevron { color: #5f4a8f; }
 
 .selectMenu {
-  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 10;
-  background: #fff; border: 1px solid #e7e3ef; border-radius: 14px; padding: 6px;
-  box-shadow: 0 20px 48px rgba(30,20,50,.16);
-  opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top center;
-  pointer-events: none; transition: opacity .16s ease, transform .16s ease;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #dcd7e8;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(30, 20, 50, 0.22);
+  animation: menuIn .15s cubic-bezier(.2,.7,.2,1) both;
 }
-.selectMenuOpen { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-.selectOption { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; transition: background .13s; }
-.selectOption:hover { background: #f6f3fb; }
-.optIcon  { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
-.optText  { font-size: 14px; font-weight: 600; color: #201b2e; }
+.selectOption {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  transition: background .13s, color .13s, box-shadow .13s;
+  border: none; background: transparent; text-align: left;
+}
+.selectOption:hover,
+.selectOption:focus-visible { background: #f6f3fb; outline: none; }
+.selectOptionActive { background: #f4efff; box-shadow: inset 0 0 0 1px rgba(139,92,246,.18); }
+.optIcon  { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.optText  { font-size: 14px; font-weight: 700; color: #201b2e; }
 .optCheck { margin-left: auto; color: #8b5cf6; opacity: 0; transition: opacity .15s; }
 .optCheckOn { opacity: 1; }
 
