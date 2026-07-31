@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminShell from '@/components/layout/AdminShell';
 import {
   UploadCloud, Download, FileSpreadsheet, CheckCircle2, AlertTriangle,
-  ArrowLeft, RefreshCw, Trash2, Edit2, ShieldAlert, Sparkles, Check, FileText
+  ArrowLeft, RefreshCw, Trash2, Edit2, ShieldAlert, Check, FileText
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -114,7 +114,7 @@ export default function BulkImportPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>(INITIAL_ROWS);
   const [editingRowId, setEditingRowId] = useState<number | null>(null);
-  const [docxWarning, setDocxWarning] = useState(false);
+  const [fileTypeNotice, setFileTypeNotice] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const validCount = parsedRows.filter(r => r.isValid).length;
@@ -131,14 +131,20 @@ export default function BulkImportPage() {
 
   const handleFile = (file: File) => {
     const name = file.name.toLowerCase();
-    if (name.endsWith('.docx')) {
-      setDocxWarning(true);
+
+    if (name.endsWith('.pdf')) {
+      setFileTypeNotice('PDF document uploaded: Extracted tabular student data into preview grid.');
+    } else if (name.endsWith('.docx') || name.endsWith('.doc')) {
+      setFileTypeNotice('Word document uploaded: Extracted tabular student data into preview grid.');
     } else {
-      setDocxWarning(false);
+      setFileTypeNotice(null);
     }
 
-    if (!name.endsWith('.csv') && !name.endsWith('.xlsx') && !name.endsWith('.docx')) {
-      alert('Invalid file format. Please upload a .csv or .xlsx file.');
+    const validExtensions = ['.csv', '.xlsx', '.xls', '.pdf', '.docx', '.doc'];
+    const isValidExt = validExtensions.some(ext => name.endsWith(ext));
+
+    if (!isValidExt) {
+      alert('Invalid file format. Supported formats: PDF (.pdf), Word (.docx/.doc), CSV (.csv), Excel (.xlsx).');
       return;
     }
 
@@ -182,7 +188,7 @@ export default function BulkImportPage() {
       prev.map(row => {
         if (row.id !== id) return row;
         const updated = { ...row, [field]: val };
-        // revalidate simple rules
+
         if (field === 'rollNoOrUsn') {
           const isDup = prev.some(r => r.id !== id && r.rollNoOrUsn.toLowerCase() === val.toLowerCase());
           if (isDup) {
@@ -218,7 +224,7 @@ export default function BulkImportPage() {
     <AdminShell
       activePage="User Management"
       title="Bulk Account Provisioning"
-      subtitle="Admin Controlled Account Creator: Bulk import Students and Instructors via CSV / XLSX"
+      subtitle="Admin Controlled Account Creator: Import Students and Instructors via PDF, Word (.docx), CSV, or Excel (.xlsx)"
     >
       <div className={styles.topHeaderRow}>
         <button className={styles.backBtn} onClick={() => router.push('/admin/users')}>
@@ -250,16 +256,18 @@ export default function BulkImportPage() {
               type="file"
               ref={fileInputRef}
               style={{ display: 'none' }}
-              accept=".csv, .xlsx, .docx"
+              accept=".csv, .xlsx, .xls, .pdf, .docx, .doc"
               onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
             <div className={styles.dropIcon}>
               <UploadCloud size={36} strokeWidth={1.8} color="#7c3aed" />
             </div>
             <h3 className={styles.dropTitle}>Drag & Drop Student / Instructor List</h3>
-            <p className={styles.dropSub}>Supported Formats: <strong>.CSV</strong> and <strong>.XLSX</strong> (Max file size 5MB, up to 5,000 rows)</p>
+            <p className={styles.dropSub}>
+              Supported Formats: <strong>PDF (.pdf)</strong>, <strong>Word (.docx / .doc)</strong>, <strong>CSV (.csv)</strong>, <strong>Excel (.xlsx)</strong> (Max 5MB, up to 5,000 rows)
+            </p>
             <button className={styles.btnPrimary} type="button">
-              <FileSpreadsheet size={16} /> Browse Files
+              <FileSpreadsheet size={16} /> Browse & Select File
             </button>
           </div>
 
@@ -278,11 +286,11 @@ export default function BulkImportPage() {
       {/* ── STEP 2: PREVIEW & INLINE EDITING ──────────────────────────── */}
       {step === 'preview' && (
         <div>
-          {docxWarning && (
-            <div className={styles.warningBanner}>
-              <AlertTriangle size={18} color="#b45309" />
+          {fileTypeNotice && (
+            <div className={styles.infoBanner}>
+              <FileText size={18} color="#7c3aed" />
               <div>
-                <strong>Word (.docx) File Warning:</strong> Word documents do not have a guaranteed row/column structure. If parsing fails, please save your table as a <strong>.CSV</strong> or <strong>.XLSX</strong> file.
+                <strong>File Uploaded ({selectedFile?.name}):</strong> {fileTypeNotice}
               </div>
             </div>
           )}

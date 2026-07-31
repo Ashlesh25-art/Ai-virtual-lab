@@ -29,6 +29,7 @@
 .btnSecondary:hover { background: rgba(255,255,255,.9); }
 
 /* Warnings & Summary */
+.infoBanner { display: flex; align-items: center; gap: 12px; background: rgba(233,213,255,.45); border: 1px solid rgba(139,92,246,.3); padding: 14px 20px; border-radius: 16px; margin-bottom: 20px; font-size: 13.5px; color: #4c1d95; }
 .warningBanner { display: flex; align-items: center; gap: 12px; background: rgba(254,243,199,.9); border: 1px solid rgba(245,158,11,.4); padding: 14px 20px; border-radius: 16px; margin-bottom: 20px; font-size: 13.5px; color: #92400e; }
 .summaryBar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
 .summaryStats { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
