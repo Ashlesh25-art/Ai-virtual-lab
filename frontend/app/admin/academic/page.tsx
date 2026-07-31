@@ -4,11 +4,11 @@ import { useState } from 'react';
 import AdminShell from '@/components/layout/AdminShell';
 import {
   CalendarDays, Layers, BookOpen, Users, Building2,
-  Plus, ChevronRight, CheckCircle2, Edit, Trash2, X, Save
+  Plus, ChevronRight, Edit, Trash2, X, Save
 } from 'lucide-react';
 import styles from './page.module.css';
 
-type Section = 'overview' | 'years' | 'batches' | 'sections' | 'subjects' | 'departments';
+type Section = 'years' | 'batches' | 'sections' | 'subjects' | 'departments';
 
 interface AcademicYearItem { year: string; status: string; start: string; end: string; batches: number }
 interface BatchItem { code: string; name: string; dept: string; sem: string; students: number; status: string }
@@ -89,7 +89,7 @@ export default function AcademicPage() {
   ];
 
   return (
-    <AdminShell activePage="Academic Setup" title="Academic Setup" subtitle="Configure academic years, batches, departments, sections and subjects">
+    <AdminShell activePage="Academic Setup" title="Academic Setup" subtitle="Configure academic years, batches, departments, sections, and subjects">
       {/* ── Category Cards ────────────────────────────────────────────── */}
       <div className={styles.overviewGrid}>
         {categories.map(s => (
