@@ -45,14 +45,16 @@ enum ContentType {
 // ─── User Management ──────────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String
-  passwordHash  String
-  role          Role
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  personalEmail      String?
+  name               String
+  passwordHash       String
+  role               Role
+  mustChangePassword Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   studentProfile    StudentProfile?
   instructorProfile InstructorProfile?
@@ -278,3 +280,39 @@ model Certificate {
   @@unique([studentId, experimentId])
   @@map("certificates")
 }
+
+// ─── Import Jobs & Audit Logging ─────────────────────────────────────────────
+
+enum ImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ImportJob {
+  id           String          @id @default(cuid())
+  createdById  String
+  filename     String
+  totalRows    Int
+  validRows    Int
+  errorRows    Int
+  status       ImportJobStatus @default(PENDING)
+  reportJson   Json?
+  createdAt    DateTime        @default(now())
+  completedAt  DateTime?
+
+  @@map("import_jobs")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+

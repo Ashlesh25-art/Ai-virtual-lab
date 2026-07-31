@@ -119,8 +119,8 @@ export default function UserManagementPage() {
             <Filter size={14} strokeWidth={2} /> Filter
           </button>
           {tab !== 'admins' && (
-            <button className={styles.btnSecondary}>
-              <Upload size={14} strokeWidth={2} /> Bulk Upload CSV
+            <button className={styles.btnSecondary} onClick={() => router.push('/admin/users/import')}>
+              <Upload size={14} strokeWidth={2} /> Bulk Import CSV / XLSX
             </button>
           )}
           <button className={styles.btnPrimary}>
